@@ -88,6 +88,7 @@ Progress is displayed in real time, for example:
 🔗 Fetching page 1...
 ...
 ```
+![image](https://github.com/user-attachments/assets/4bead2ef-4e74-40de-b1da-36416ab5a874)
 
 > **Interruption?** Press **Ctrl‑C** at any time. When you restart, the script uses `progress.log` to resume.
 
