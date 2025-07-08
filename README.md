@@ -1,178 +1,185 @@
-# StubHub Scraper
+# 📋 StubHub Event & Venue Scraper
 
-A fast, fault‑tolerant CLI utility that harvests event data from StubHub’s *Explore* API for **every city** listed in `worldcities.csv`, combining the results into a single, tidy `events.csv`—all while automatically resuming where it left off whenever you restart the script.
-
----
-
-## ✨ Key Features
-
-| Feature                | Description                                                                                                                                         |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Consolidated CSV**   | Writes all events to `events.csv` with a fixed column order that’s ready for analysis in Excel, Pandas, SQL, etc.                                   |
-| **Resume‑from‑log**    | Progress for each city (or a *done* flag) is appended to `progress.log`.  Restart the script anytime and it will pick up exactly where it left off. |
-| **Parallel Scraping**  | Processes up to **`CONCURRENT`** cities at once using Python’s `ThreadPoolExecutor` for faster overall runtime.                                     |
-| **Rate‑limit Safety**  | Adds a one‑second delay (`WAIT_SECS`) between page requests *per city* to avoid hammering the API.                                                  |
-| **Out‑file Cache**     | Raw JSON from every page is stored under `wget_output/` so you can re‑parse or audit later.                                                         |
-| **Thread‑safe Writes** | Exclusive locks protect both `events.csv` and `progress.log`, preventing race conditions in parallel mode.                                          |
-| **403 Tip for Mobile** | Detects HTTP 403 (IP blocked) and prints an *Airplane‑mode* toggle tip—handy when running on Termux or behind a changing mobile IP.                 |
-| **Max‑page Guard**     | `MAX_PAGES` caps requests per city to stay within sane limits if StubHub ever loops or paginates infinitely.                                        |
-| **Empty‑page Prune**   | If a page returns an empty `"events": []`, the city is marked complete and the temporary JSON file is deleted.                                      |
+This project consists of two Python scripts that work together to scrape **StubHub event listings** by city and then fetch **venue seating map** data for each unique event.
 
 ---
 
-## 🗂 File / Folder Structure
+## 📁 Contents
+
+* `stubhub_event_scraper.py`: Scrapes event data city-by-city using the StubHub Explore API.
+* `stubhub_venue_map_fetcher.py`: Fetches venue seating map data for each unique event from `events.csv`.
+* `worldcities.csv`: Input city list with `name`, `country`, `lat`, and `lng` columns.
+* `events.csv`: Output file containing event metadata.
+* `venues/`: Output directory containing event venue JSON files.
+* `progress_log_event.log`: Tracks scraping progress for resume support.
+
+---
+
+## ⚙️ Requirements
+
+* Python 3.6+
+* `curl` command-line tool
+* Internet access
+* `worldcities.csv` file in the same directory
+
+---
+
+## 🚀 How to Use
+
+### ✅ Run the Scripts in This Order:
+
+#### 1️⃣ Step 1: Scrape Events by City
+
+Run:
+
+```bash
+python3 stubhub_event_scraper.py
+```
+
+What it does:
+
+* Loads cities from `worldcities.csv`
+* Encodes lat/lon and queries StubHub
+* Scrapes paginated event data
+* Saves to `events.csv`
+* Resumes on re-run using `progress_log_event.log`
+
+📆 Output:
+
+* `wget_output/*.json` files
+* `events.csv` (appended on resume)
+
+![image](https://github.com/user-attachments/assets/2367c454-f017-42b0-ac76-0c19a7acf36d)
+
+
+
+
+**Sample `events.csv` Output:**
 
 ```
-project/
-├── stubhub_scraper.py      # ← this script
-├── worldcities.csv         # Source city list (lat/lon)
-├── events.csv              # ⬅️ Consolidated output (auto‑created)
-├── progress.log            # ⬅️ Resume checkpoint (auto‑created)
-├── wget_output/            # Raw API JSON (one file per page)
-└── README.md               # ← you are here
+city,country,page,eventId,name,url,venueName,formattedVenueLocation,categoryId
+Beijing,CN,0,158266631,JJ Lin,https://www.stubhub.com/jj-lin-beijing-tickets-7-13-2025/event/158266631/,National Stadium (Bird's Nest),"Beijing, China",31461
+Mumbai,IN,0,158712746,Enrique Iglesias,https://www.stubhub.com/enrique-iglesias-mumbai-tickets-10-29-2025/event/158712746/,MMRDA Grounds,"Mumbai, India",6521
+Mumbai,IN,0,158488273,Enrique Iglesias,https://www.stubhub.com/enrique-iglesias-mumbai-tickets-10-30-2025/event/158488273/,MMRDA Grounds,"Mumbai, India",6521
+Shanghai,CN,0,158489777,China F1 GP 2026 - Sunday Only Pass,https://www.stubhub.com/formula-1-shanghai-tickets-3-15-2026/event/158489777/,Shanghai International Circuit,"Shanghai, China",421995
+Mexico City,MX,0,157403552,El Rey León,https://www.stubhub.com/the-lion-king-mexico-df-tickets-7-10-2025/event/157403552/,Teatro Telcel,"Mexico DF, Mexico",1534
+Mexico City,MX,0,158098646,Ivan Cornejo,https://www.stubhub.com/ivan-cornejo-ciudad-de-mexico-tickets-7-11-2025/event/158098646/,Teatro Metropolitan,"Ciudad de México, Mexico D.F., Mexico",418875
+Mexico City,MX,0,155838945,Hot Wheels Monster Trucks Live,https://www.stubhub.com/hot-wheels-monster-trucks-live-mexico-df-tickets-7-12-2025/event/155838945/,Arena CDMX,"Mexico DF, Federal District, Mexico",113112
+Mexico City,MX,0,155832420,Hot Wheels Monster Trucks Live,https://www.stubhub.com/hot-wheels-monster-trucks-live-mexico-df-tickets-7-13-2025/event/155832420/,Arena CDMX,"Mexico DF, Federal District, Mexico",113112
+Mexico City,MX,0,157403444,El Rey León,https://www.stubhub.com/the-lion-king-mexico-df-tickets-7-16-2025/event/157403444/,Teatro Telcel,"Mexico DF, Mexico",1534
 ```
 
 ---
 
-## 🔧 Prerequisites
+#### 2️⃣ Step 2: Fetch Venue Map for Events
 
-* **Python 3.8+**  (tested on 3.10)
-* **wget** command‑line tool
-* **pip packages**: `pandas`  (install via `pip install -r requirements.txt` or manually)
-* A stable Internet connection 🚀
+After completing event scraping, run:
 
-> **Tip (Linux / Termux):** Use a VPN or rotating IP address to minimise 403s.
+```bash
+python3 stubhub_venue_map_fetcher.py
+```
+
+What it does:
+
+* Reads all unique `(eventId, categoryId)` from `events.csv`
+* Makes a POST request to fetch venue seating map data
+* Stores JSON per event inside `venues/`
+
+📆 Output:
+
+* `venues/{eventId}_venue.json` files
+
+
+![image](https://github.com/user-attachments/assets/3bd03edf-520c-4fc9-b26d-4d52369a9973)
+
+![image](https://github.com/user-attachments/assets/4aeb9589-0445-4d4e-bdad-7acca409c812)
+
+**Sample `venue.json` Output:**
+
+```json
+{
+  "1151_1176486": {
+    "rows": [971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516,
+              971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516, 971516,
+              971516, 971516],
+    "sectionId": 1176486,
+    "ticketClassId": 1151,
+    "sectionName": "General Admission"
+  }
+}
+```
+
+---
+
+## 📊 Features
+
+### Script 1: `stubhub_event_scraper.py`
+
+* ✅ Resume support (`progress_log_event.log`)
+* ✅ Concurrent scraping (customizable via `CONCURRENT`)
+* ✅ Real-time CLI progress bar with speed
+* ✅ Uses `curl` with proper headers
+* ✅ Efficient event parsing and batching
+
+### Script 2: `stubhub_venue_map_fetcher.py`
+
+* ✅ Multi-threaded venue map downloader
+* ✅ Skips already-downloaded venues
+* ✅ Real-time progress bar with ETA
+* ✅ Calculates speed and total time
 
 ---
 
 ## ⚙️ Configuration
 
-Open `stubhub_scraper.py` and edit the *CONFIG* block at the top if needed:
+### In `stubhub_event_scraper.py`:
 
 ```python
-INPUT_CSV     = "worldcities.csv"   # Source of cities
-OUT_DIR       = Path("wget_output") # Folder for raw JSON
-COMBINED_CSV  = "events.csv"        # Final merged file
-PROGRESS_LOG  = "progress.log"      # Resume checkpoint
-
-CONCURRENT    = 5    # Parallel city workers
-WAIT_SECS     = 1    # Delay between page requests
-TOP_N         = None # Limit number of cities (None = all)
-MAX_PAGES     = 100  # Safety limit per city
+CONCURRENT = 5       # Threads for scraping cities
+WAIT_SECS = 1        # Delay between page fetches
 ```
 
-*For most users, the defaults are fine.*  Increase `CONCURRENT` cautiously—more threads mean more sockets (and a higher chance of getting blocked).
+### In `stubhub_venue_map_fetcher.py`:
 
----
-
-## 🚀 Quick Start
-
-```bash
-# 1. Clone or copy the repo
-$ git clone https://github.com/yourname/stubhub-scraper.git
-$ cd stubhub-scraper
-
-# 2. Install Python deps
-$ pip install pandas
-
-# 3. Run the scraper
-$ python stubhub_scraper.py
+```python
+CONCURRENT = 10      # Threads for venue fetch
 ```
 
-Progress is displayed in real time, for example:
+---
+
+## 📌 Notes
+
+* Ensure your `worldcities.csv` contains valid `lat` and `lng` values.
+* You can safely stop and re-run scripts. It will skip completed work.
+* For large-scale scraping, consider using proxies or rotating IPs if rate-limited.
+
+---
+
+## 📂 Directory Structure
 
 ```
-🌍 United States, New York (start at page 0)
-🔗 Fetching page 0...
-✔ Saved 50 events from page 0
-🔗 Fetching page 1...
-...
+.
+├── stubhub_event_scraper.py
+├── stubhub_venue_map_fetcher.py
+├── worldcities.csv
+├── events.csv
+├── progress_log_event.log
+├── wget_output/
+│   └── {city}_p{page}.json
+└── venues/
+    └── {eventId}_venue.json
 ```
-![image](https://github.com/user-attachments/assets/4bead2ef-4e74-40de-b1da-36416ab5a874)
-
-> **Interruption?** Press **Ctrl‑C** at any time. When you restart, the script uses `progress.log` to resume.
 
 ---
 
-## ♻️ Resuming & Restarting
+## 🧑‍💻 Author
 
-* **Completed cities** are tagged `done` in `progress.log`.
-* **In‑progress cities** store the *next* page number to fetch.
-* **Automatic cleanup**: When *all* cities show `done`, the script deletes `progress.log` and prints an *All done* message.
+Developed by \[Your Name or GitHub Profile]
 
 ---
 
-## 🛑 Handling 403 Errors
+## 📄 License & Disclaimer
 
-StubHub sometimes blocks an IP after \~100–150 requests. The script watches `wget`’s exit code / stderr for `403 Forbidden`:
+This project is provided for **educational and personal use only**.
 
-> **Recommendation:** If you encounter a 403, it's best to run this script locally on a Unix-based system (Linux/macOS/Termux) for more control over your IP.
->
-> • **On a Wi-Fi router**: Restart your router to obtain a new IP address.
->
-> • **Using mobile hotspot or Termux**: Toggle airplane mode OFF and ON to get a fresh IP.
-
-1. It prints a red ⚠️ message.
-2. Suggests toggling **Airplane mode** (mobile) or reconnecting your router/VPN.
-3. Continues quietly until you regain access.
-
-*Nothing is lost—just rerun the script and it resumes automatically.*
-
----
-
-## 🗃 Output Schema (`events.csv`)
-
-| Column                                             | Meaning                                       |
-| -------------------------------------------------- | --------------------------------------------- |
-| city, country, page                                | Where & from which page the event was scraped |
-| eventId, name, url                                 | StubHub event metadata                        |
-| dayOfWeek, formattedDateWithoutYear, formattedTime | Human‑readable schedule                       |
-| venueName, formattedVenueLocation, venueId         | Venue details                                 |
-| categoryId, imageUrl                               | Event category & hero image                   |
-| priceClass, isUnderHundred                         | Price hints                                   |
-| isTbd, isDateConfirmed, isTimeConfirmed            | Date/time certainty flags                     |
-| eventState, hasActiveListings, aggregateFavorites  | Live state & popularity                       |
-| isFavorite, isParkingEvent, isRefetchedGlobalEvent | Misc flags                                    |
-
-The columns are **always in the same order**, perfect for Pandas `df = pd.read_csv("events.csv")`.
-
----
-
-## 🛠 Customisation Ideas
-
-* **Rotate Proxies** – Feed a list of proxies to `wget` via `--execute use_proxy=yes`.
-* **Change Headers** – Edit the `HEADERS` list for a different browser fingerprint.
-* **Alternative Downloader** – Swap `wget` for `curl` or `requests` if you prefer.
-* **Database Sink** – Stream parsed rows straight to Postgres/MySQL instead of a CSV.
-
----
-
-## 🤖 Troubleshooting
-
-| Symptom                                        | Cause / Fix                                                        |
-| ---------------------------------------------- | ------------------------------------------------------------------ |
-| `ERROR 403: Forbidden`                         | IP blocked – change IP, wait 15–20 min, then restart.              |
-| `No such file or directory: 'worldcities.csv'` | Ensure the CSV is in the script folder.                            |
-| Hangs at startup                               | Check Internet; DNS or network issue.                              |
-| Too slow                                       | Increase `CONCURRENT` or decrease `WAIT_SECS`, but risk more 403s. |
-
----
-
-## 📄 License
-
-MIT – do what you want, but don’t sue the author.
-
----
-
-## ⚠️ Disclaimer
-
-This script is provided for educational and research purposes only. The developer is **not responsible** for any misuse, damages, or violations of any service’s terms of use, including StubHub. Use at your own risk.
-
----
-
-## 🙌 Acknowledgements
-
-* [StubHub](https://www.stubhub.com/) – for the data (respect their ToS).
-* *worldcities.csv* by SimpleMaps – city lat/lon dataset.
-
-> Pull requests welcome!  Happy scraping.
+> ⚠️ **Disclaimer:** This tool accesses public endpoints from StubHub. You are solely responsible for complying with StubHub’s [Terms of Service](https://www.stubhub.com/legal/) and any applicable laws in your jurisdiction. The authors of this tool are not liable for any misuse or consequences of its use.
