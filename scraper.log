@@ -1,0 +1,14 @@
+2025-07-18 07:33:15,134 - WARNING - Invalid city data: {'name': 'Tokyo', 'country': 'JP', 'lat': '', 'lng': '139.6503'}
+2025-07-18 07:33:15,134 - WARNING - Invalid event data: eventId=, categoryId=67890
+2025-07-18 07:33:15,134 - WARNING - Non-numeric IDs: eventId=abc, categoryId=67890
+2025-07-18 07:33:15,135 - INFO - Loaded 2 valid cities from /tmp/tmp7kc6nzjl.csv
+2025-07-18 07:33:33,252 - WARNING - Invalid city data: {'name': 'Tokyo', 'country': 'JP', 'lat': '', 'lng': '139.6503'}
+2025-07-18 07:33:33,252 - WARNING - Invalid event data: eventId=, categoryId=67890
+2025-07-18 07:33:33,252 - WARNING - Non-numeric IDs: eventId=abc, categoryId=67890
+2025-07-18 07:33:33,252 - INFO - Loaded 2 valid cities from /tmp/tmp9wcvl43j.csv
+2025-07-18 07:34:03,995 - WARNING - Invalid city data: {'name': 'Tokyo', 'country': 'JP', 'lat': '', 'lng': '139.6503'}
+2025-07-18 07:34:03,995 - WARNING - Invalid event data: eventId=, categoryId=67890
+2025-07-18 07:34:03,995 - WARNING - Non-numeric IDs: eventId=abc, categoryId=67890
+2025-07-18 07:34:03,996 - INFO - Loaded 2 valid cities from /tmp/tmp_ehpgex5.csv
+2025-07-18 07:34:03,996 - WARNING - Attempt 1 failed: Attempt 1 failed. Retrying in 0.1s...
+2025-07-18 07:34:04,096 - WARNING - Attempt 2 failed: Attempt 2 failed. Retrying in 0.2s...

@@ -17,10 +17,25 @@ This project consists of two Python scripts that work together to scrape **StubH
 
 ## ⚙️ Requirements
 
-* Python 3.6+
+* Python 3.7+ (with type hints support)
 * `curl` command-line tool
 * Internet access
 * `worldcities.csv` file in the same directory
+
+## 🔧 Installation
+
+1. **Clone or download** this repository
+2. **Copy configuration** (optional):
+   ```bash
+   cp .env.example .env
+   # Edit .env to customize settings
+   ```
+3. **Test the setup**:
+   ```bash
+   python3 test_scraper.py
+   ```
+
+No external Python packages required! This project uses only the Python standard library.
 
 ---
 
@@ -113,36 +128,74 @@ What it does:
 
 ## 📊 Features
 
-### Script 1: `stubhub_event_scraper.py`
+### 🚀 Enhanced Script 1: `stubhub_event_scraper.py`
 
-* ✅ Resume support (`progress_log_event.log`)
-* ✅ Concurrent scraping (customizable via `CONCURRENT`)
-* ✅ Real-time CLI progress bar with speed
-* ✅ Uses `curl` with proper headers
-* ✅ Efficient event parsing and batching
+* ✅ **Resume support** with progress logging
+* ✅ **Concurrent scraping** with configurable thread count
+* ✅ **Real-time progress bars** with speed metrics
+* ✅ **Robust error handling** with retry logic and exponential backoff
+* ✅ **Input validation** for city data (lat/lng validation)
+* ✅ **Type hints** for better code documentation
+* ✅ **Structured logging** with configurable levels
+* ✅ **Environment-based configuration** 
+* ✅ **Graceful failure handling** and comprehensive error messages
 
-### Script 2: `stubhub_venue_map_fetcher.py`
+### 🎯 Enhanced Script 2: `stubhub_venue_map_fetcher.py`
 
-* ✅ Multi-threaded venue map downloader
-* ✅ Skips already-downloaded venues
-* ✅ Real-time progress bar with ETA
-* ✅ Calculates speed and total time
+* ✅ **Multi-threaded venue downloading** with progress tracking
+* ✅ **Smart skipping** of already-downloaded venues
+* ✅ **Real-time progress bars** with ETA and speed calculations
+* ✅ **Retry logic** for failed venue fetches
+* ✅ **Data validation** for event IDs and category IDs
+* ✅ **Type hints** and comprehensive error handling
+* ✅ **Detailed logging** with success/failure tracking
+* ✅ **Request timeouts** and connection management
+
+### 🔧 New: `config.py`
+
+* ✅ **Centralized configuration** management
+* ✅ **Environment variable support** with fallback defaults
+* ✅ **Configuration validation** with type checking
+* ✅ **Flexible settings** for performance tuning
+
+### 🧪 New: `test_scraper.py`
+
+* ✅ **Automated testing** for core functionality
+* ✅ **Configuration validation** tests
+* ✅ **Utility function testing** (base64, validation, etc.)
+* ✅ **JSON/CSV handling** verification
+* ✅ **Retry logic testing**
 
 ---
 
 ## ⚙️ Configuration
 
-### In `stubhub_event_scraper.py`:
+The scraper now supports flexible configuration through:
 
-```python
-CONCURRENT = 5       # Threads for scraping cities
-WAIT_SECS = 1        # Delay between page fetches
+### 🌟 Environment Variables (Recommended)
+Copy `.env.example` to `.env` and customize:
+```bash
+# Performance settings
+CONCURRENT_CITIES=5        # Cities to scrape simultaneously
+CONCURRENT_VENUES=10       # Venue maps to fetch simultaneously
+WAIT_SECONDS=1.0          # Delay between requests
+
+# Retry settings
+MAX_RETRIES=3             # Retry failed requests
+RETRY_DELAY=2.0           # Initial retry delay (exponential backoff)
+REQUEST_TIMEOUT=30        # Request timeout in seconds
+
+# Logging
+LOG_LEVEL=INFO            # DEBUG, INFO, WARNING, ERROR, CRITICAL
 ```
 
-### In `stubhub_venue_map_fetcher.py`:
+### 📝 Configuration File
+All settings are centralized in `config.py` with validation and type hints.
 
-```python
-CONCURRENT = 10      # Threads for venue fetch
+### 🧪 Test Configuration
+Run the test suite to validate your setup:
+```bash
+python3 test_scraper.py
 ```
 
 ---
@@ -159,14 +212,21 @@ CONCURRENT = 10      # Threads for venue fetch
 
 ```
 .
-├── stubhub_event_scraper.py
-├── stubhub_venue_map_fetcher.py
-├── worldcities.csv
-├── events.csv
-├── progress_log_event.log
-├── wget_output/
+├── stubhub_event_scraper.py      # 🚀 Enhanced event scraper
+├── stubhub_venue_map_fetcher.py  # 🎯 Enhanced venue map fetcher
+├── config.py                     # 🔧 Centralized configuration
+├── test_scraper.py              # 🧪 Test suite
+├── requirements.txt             # 📦 Dependencies (optional)
+├── .env.example                 # 🌟 Environment config template
+├── worldcities.csv              # 📍 Input cities data
+├── top_cities.csv               # 📊 Sample city data
+├── events.csv                   # 📅 Output events data
+├── progress_log_event.log       # 📝 Progress tracking
+├── scraper.log                  # 📋 Event scraper logs
+├── venue_fetcher.log            # 📋 Venue fetcher logs
+├── wget_output/                 # 📁 Raw JSON responses
 │   └── {city}_p{page}.json
-└── venues/
+└── venues/                      # 🏟️ Venue map data
     └── {eventId}_venue.json
 ```
 
